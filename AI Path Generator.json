@@ -1,0 +1,206 @@
+{
+  "name": "AI Path Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "b9746b61-ac4c-487a-a3d8-a85389bf619a",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        32,
+        -32
+      ],
+      "webhookId": "6a7deeca-415d-4b61-b983-93e267a4108d"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=You build a day-wise learning path and record it in Google Docs and Google Calendar. Today is {{$now.format('YYYY-MM-DD')}}.\n\nSteps:\n1. Plan topics for the requested number of days, beginner to advanced.\n2. Start date: use the date the user gives (\"tomorrow\", \"next Monday\", \"from <date>\"); if none, use today.\n3. From your own knowledge, pick reputable resources per day (official docs, well-known YouTube channels, popular articles). Only include links you are confident are correct; do not invent fake URLs.\n4. Create the doc ONCE with \"Create a document in Google Docs\", title \"[X]-Day [Topic] Learning Path\". Keep its ID.\n5. Update the doc ONCE with \"Update a document in Google Docs\", including all days. Per day: \"Day N: <topic>\", 2-3 sentence description, 3 key points, a Video link, an Article link, Duration 2 hours.\n6. Create ONE calendar event per day with \"Create an event in Google Calendar\": Start [DATE]T11:00:00+05:30, End [DATE]T13:00:00+05:30, Summary \"Day N: <topic>\", non-empty Description. Day 1 = start date; add 1 day per day.\n7. Finish with: \"Learning Path Complete! Document: <url>. Calendar: added [X] events from [start] to [end] at 11:00 AM.\" Then stop.\n\nRules: never leave Summary or Description empty; do each doc step exactly once; one event per day."
+        }
+      },
+      "id": "5b379801-e5a9-4e81-9a99-94827bb0fe57",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        256,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "id": "83a8abc7-703d-4dc4-beef-2c3f07982973",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        160,
+        176
+      ],
+      "retryOnFail": true,
+      "maxTries": 5,
+      "waitBetweenTries": 30000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "XhrCw0CTJaaRzkG8",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "folderId": "1qQEsWmThlN6O3d2u_ZP08Pa6THGynlUw",
+        "title": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Title', ``, 'string') }}"
+      },
+      "id": "84801c20-63a4-4336-af47-39a2c6e540e3",
+      "name": "Create a document in Google Docs",
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        576,
+        208
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "gpC3y5k5vfuMDQpZ",
+          "name": "Google Docs account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Doc_ID_or_URL', ``, 'string') }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "insert",
+              "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('actionFields0_Old_Text', ``, 'string') }}"
+            }
+          ]
+        }
+      },
+      "id": "5a8f60e9-a382-43f9-b2b4-e77b72005ed8",
+      "name": "Update a document in Google Docs",
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        688,
+        112
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "gpC3y5k5vfuMDQpZ",
+          "name": "Google Docs account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "mode": "list",
+          "value": "hv265223@gmail.com",
+          "cachedResultName": "hv265223@gmail.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "additionalFields": {
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}",
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "id": "3ec64ecc-a2c1-4fb2-b61d-f4849a827932",
+      "name": "Create an event in Google Calendar",
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        800,
+        32
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Lrk5J00lzK30FQgZ",
+          "name": "Google Calendar account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a document in Google Docs": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a document in Google Docs": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "15d510d8-6fc3-4b3c-9f3d-332c96bc204a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2d88571efbb08310057b73a38652883083f7e235660588d347f3b5ec8b8bf154"
+  },
+  "nodeGroups": [],
+  "id": "90xEfV71EgUAZoaS",
+  "tags": []
+}
